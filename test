@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import sys
 
 def print_msg(test_group, test_name, n, msg):
 	print('\r  {} #{}: {:<30}'.format(test_name, n, msg), end='', flush=True)
@@ -19,7 +20,6 @@ def print_trace(stdout, stderr):
 		print('-- begin trace (stderr) --')
 		print(stderr.decode(), end='', flush=True)
 		print('--  end trace (stderr)  --')
-	print()
 
 def check_list(test_data, sequence):
 	la = []
@@ -144,6 +144,11 @@ tests_groups = [{
 	'timeout': 120
 }]
 
+force = False
+for arg in sys.argv:
+	if arg == '-f':
+		force = True
+
 for tests_group in tests_groups:
-	if not do_tests(tests_group):
+	if not do_tests(tests_group) and not force:
 		exit(1)
