@@ -1,0 +1,149 @@
+#!/usr/bin/python3
+
+import os
+import subprocess
+
+def print_msg(test_group, test_name, n, msg):
+	print('\r  {} #{}: {:<30}'.format(test_name, n, msg), end='', flush=True)
+
+def print_ko(test_group, test_name, n, msg):
+	print_msg(tests_group, test_name, n, 'KO')
+	print('\n    {}'.format(msg))
+
+def print_trace(stdout, stderr):
+	if (len(stdout) > 0):
+		print('-- begin trace (stdout) --')
+		print(stdout.decode(), end='', flush=True)
+		print('--  end trace (stdout)  --')
+	if (len(stderr) > 0):
+		print('-- begin trace (stderr) --')
+		print(stderr.decode(), end='', flush=True)
+		print('--  end trace (stderr)  --')
+	print()
+
+def check_list(test_data, sequence):
+	la = []
+	lb = []
+	for elem in test_data.split(' '):
+		la.append(int(elem))
+
+	for op in sequence:
+		if not op in ['', 'sa', 'sb', 'sc', 'pa', 'pb', 'ra', 'rb', 'rr', 'rra', 'rrb', 'rrr']:
+			return 'Error: invalid operation: {}'.format(op)
+		if (op == 'sa' or op == 'sc') and len(la) > 1:
+			la[0], la[1] = la[1], la[0]
+		if (op == 'sb' or op == 'sc') and len(lb) > 1:
+			lb[0], la[1] = lb[1], lb[0]
+		if op == 'pa' and len(lb) > 0:
+			la = [ lb[0] ] + la
+			del lb[0]
+		if op == 'pb' and len(la) > 0:
+			lb = [ la[0] ] + lb
+			del la[0]
+		if op == 'ra' or op == 'rr':
+			la = la[1:] + la[:1]
+		if op == 'rb' or op == 'rr':
+			lb = lb[1:] + lb[:1]
+		if op == 'rra' or op == 'rrr':
+			la = la[-1:] + la[:-1]
+		if op == 'rrb' or op == 'rrr':
+			lb = lb[-1:] + lb[:-1]
+	if sorted(la) == la and len(lb) == 0:
+		return None
+	return 'Error: list not sorted'
+
+def do_tests(test_group):
+	print()
+	passed = 0
+
+	try:
+		test_files = os.listdir(tests_group['dir'])
+		test_files.sort()
+	except:
+		print('Invalid test group path: {}'.format(tests_group['dir']))
+		exit(2)
+
+	n = 0
+	test_group['count'] = len(test_files)
+	print('{} tests - {} tests'.format(test_group['name'].capitalize(), test_group['count']))
+
+	for test_file_name in test_files:
+		n += 1
+		print_msg(test_group, test_file_name, n, 'Loading test data')
+		try:
+			test_file = open(test_group['dir'] + '/' + test_file_name, 'r')
+			test_data = test_file.read()
+			test_file.close()
+		except:
+			print('\nFailed to load test data')
+			exit(2)
+
+		if test_data.endswith('\n'):
+			test_data = test_data[:-1]
+		if test_data.endswith(' '):
+			test_data = test_data[:-1]
+		args = [ './push_swap' ] + test_data.split(' ')
+
+		print_msg(test_group, test_file_name, n, 'Running push_swap')
+		try:
+			proc = subprocess.Popen(args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+			stdout, stderr = proc.communicate(timeout=test_group['timeout'])
+		except FileNotFoundError:
+			print_ko(test_group, test_file_name, n, 'Execution error: ./push_swap: no such file or directory')
+			continue
+		except subprocess.TimeoutExpired:
+			proc.kill()
+			stdout, stderr = proc.communicate()
+			print_ko(test_group, test_file_name, n, 'Crash: timed out')
+			print_trace(stdout, stderr)
+			continue
+		if (proc.returncode != 0):
+			print_ko(test_group, test_file_name, n, 'Crash: return code = {}'.format(proc.returncode))
+			print_trace(stdout, stderr)
+			continue
+
+		stdout_str = stdout.decode()
+		print_msg(test_group, test_file_name, n, 'Checking output')
+		if not stdout_str.endswith('\n'):
+			print_ko(test_group, test_file_name, n, 'Syntax error: no carriage return at end of output')
+			continue
+
+		stdout_str = stdout_str[:-1]
+		if stdout_str.startswith(' ') or stdout_str.endswith(' '):
+			print_ko(test_group, test_file_name, n, 'Syntax error: space at the beginning or at the end of the output')
+			continue
+
+		print_msg(test_group, test_file_name, n, 'Checking if list is sorted')
+		res = check_list(test_data, stdout_str.split(' '))
+		if res:
+			print_ko(test_group, test_file_name, n, res)
+			print_trace(stdout, stderr)
+			continue
+		print_msg(test_group, test_file_name, n, 'OK')
+		print('\n    PASSED')
+		passed += 1
+	return passed == test_group['count']
+
+
+
+os.environ['MALLOC_CHECK_'] = '0'
+
+print('B-CPE-084 pushswap\n')
+
+print('> make')
+proc = subprocess.Popen('make', shell=True)
+proc.wait()
+
+tests_groups = [{
+	'name': 'base',
+	'dir': 'base_tests',
+	'timeout': 120
+},{
+	'name': 'intermediate',
+	'dir': 'intermediate_tests',
+	'timeout': 120
+}]
+
+for tests_group in tests_groups:
+	if not do_tests(tests_group):
+		exit(1)
