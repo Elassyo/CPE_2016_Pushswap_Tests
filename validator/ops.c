@@ -35,7 +35,6 @@ static void	push(t_ps_llist **dst, t_ps_llist **src)
     {
       elem->prev = elem;
       elem->next = elem;
-      *dst = elem;
     }
   else
     {
@@ -44,6 +43,7 @@ static void	push(t_ps_llist **dst, t_ps_llist **src)
       elem->next->prev = elem;
       elem->prev->next = elem;
     }
+  *dst = elem;
 }
 
 static void	rotate(t_ps_llist **l)
