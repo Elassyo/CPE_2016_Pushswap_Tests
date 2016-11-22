@@ -25,7 +25,7 @@ def validate(test_group, test_data, ps_stdout):
 	args = [ './validate' ] + test_data.split(' ')
 	try:
 		proc = subprocess.Popen(args, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-		stdout = proc.communicate(stdin=ps_stdout, timeout=test_group['validate-to'])[0]
+		stdout = proc.communicate(input=ps_stdout, timeout=test_group['validate-to'])[0]
 	except FileNotFoundError:
 		return (1, 'Execution error: ./validate: no such file or directory')
 	except subprocess.TimeoutExpired:
