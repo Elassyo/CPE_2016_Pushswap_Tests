@@ -71,7 +71,7 @@ int		validate(t_ps_llist *la, int size, char *out)
       printf("syntax error: no carriage return at end of sequence");
       return (2);
     }
-  if (lb == NULL)
+  if (lb != NULL)
     {
       printf("error: list B not empty after operations");
       return (2);
