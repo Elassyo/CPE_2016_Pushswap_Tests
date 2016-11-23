@@ -12,14 +12,15 @@ def print_ko(test_group, test_name, n, msg):
 	print('\n    {}'.format(msg))
 
 def print_trace(stdout, stderr):
-	if (len(stdout) > 0):
-		print('-- begin trace (stdout) --')
-		print(stdout.decode(), end='', flush=True)
-		print('--  end trace (stdout)  --')
-	if (len(stderr) > 0):
-		print('-- begin trace (stderr) --')
-		print(stderr.decode(), end='', flush=True)
-		print('--  end trace (stderr)  --')
+	if (trace):
+		if (len(stdout) > 0):
+			print('-- begin trace (stdout) --')
+			print(stdout.decode(), end='', flush=True)
+			print('--  end trace (stdout)  --')
+		if (len(stderr) > 0):
+			print('-- begin trace (stderr) --')
+			print(stderr.decode(), end='', flush=True)
+			print('--  end trace (stderr)  --')
 
 def check_list(test_data, sequence):
 	la = []
@@ -82,7 +83,7 @@ def do_tests(test_group):
 			test_data = test_data[:-1]
 		if test_data.endswith(' '):
 			test_data = test_data[:-1]
-		args = [ './push_swap' ] + test_data.split(' ')
+		args = [ 'ltrace', './push_swap' ] + test_data.split(' ')
 
 		print_msg(test_group, test_file_name, n, 'Running push_swap')
 		try:
@@ -137,17 +138,20 @@ proc.wait()
 tests_groups = [{
 	'name': 'base',
 	'dir': 'base_tests',
-	'timeout': 120
+	'timeout': 10
 },{
 	'name': 'intermediate',
 	'dir': 'intermediate_tests',
-	'timeout': 120
+	'timeout': 10
 }]
 
+trace = False
 force = False
 for arg in sys.argv:
 	if arg == '-f':
 		force = True
+	if arg == '-t':
+		trace = True
 
 for tests_group in tests_groups:
 	if not do_tests(tests_group) and not force:
