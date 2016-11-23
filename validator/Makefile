@@ -2,16 +2,16 @@ CC	=	gcc
 
 RM	=	rm -f
 
-CFLAGS	=	-c
+CFLAGS	=	-g -c -O3 -I.
 
 LDFLAGS	=
 
 NAME	=	../validate
 
-SRC	=	main.c	\
-		ops.c
+SRC	=	validator.c	\
+		pushswap_ops.c
 
-HDR	=	push_swap.h
+HDR	=	pushswap.h
 
 OBJ	=	$(SRC:.c=.o)
 

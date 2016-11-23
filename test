@@ -24,6 +24,8 @@ def print_trace(stdout, stderr):
 
 def validate(test_group, test_data, ps_stdout):
 	args = [ './validate' ] + test_data.split(' ')
+	if (valgrind):
+		args = [ 'valgrind' ] + args
 	try:
 		proc = subprocess.Popen(args, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 		stdout = proc.communicate(input=ps_stdout, timeout=test_group['validate-to'])[0]
@@ -65,7 +67,12 @@ def do_tests(test_group):
 			test_data = test_data[:-1]
 		if test_data.endswith(' '):
 			test_data = test_data[:-1]
-		args = [ 'ltrace', './push_swap' ] + test_data.split(' ')
+
+		args = [ './push_swap' ] + test_data.split(' ')
+		if (ltrace):
+			args = [ 'ltrace' ] + args
+		if (valgrind):
+			args = [ 'valgrind' ] + args
 
 		print_msg(test_group, test_file_name, n, 'Running push_swap')
 		try:
@@ -90,9 +97,10 @@ def do_tests(test_group):
 		if ret == 0:
 			print_msg(test_group, test_file_name, n, 'OK')
 			print('\n    ' + msg)
+			passed += 1
 		else:
-			print_ko(test_group, test_file_name, n, '    ' + msg)
-		passed += 1
+			print_ko(test_group, test_file_name, n, msg)
+			print_trace(stdout, stderr)
 	return passed == test_group['count']
 
 
@@ -117,6 +125,8 @@ tests_groups = [{
 	'validate-to': 3
 }]
 
+valgrind = False
+ltrace = False
 trace = False
 force = False
 for arg in sys.argv:
@@ -124,6 +134,10 @@ for arg in sys.argv:
 		force = True
 	if arg == '-t':
 		trace = True
+	if arg == '-v':
+		valgrind = True
+	if arg == '-l':
+		ltrace = True
 
 for tests_group in tests_groups:
 	if not do_tests(tests_group) and not force:
