@@ -27,8 +27,11 @@ void		push(t_llist *dst, t_llist *src)
     }
   node->prev = dst->size == 0 ? node : dst->first->prev;
   node->next = dst->size == 0 ? node : dst->first;
-  dst->first->prev->next = node;
-  dst->first->prev = node;
+  if (dst->size != 0)
+    {
+      dst->first->prev->next = node;
+      dst->first->prev = node;
+    }
   dst->first = node;
   dst->size++;
 }

@@ -72,7 +72,7 @@ def do_tests(test_group):
 		if (ltrace):
 			args = [ 'ltrace' ] + args
 		if (valgrind):
-			args = [ 'valgrind' ] + args
+			args = [ 'valgrind', '--leak-check=full' ] + args
 
 		print_msg(test_group, test_file_name, n, 'Running push_swap')
 		try:
@@ -97,6 +97,7 @@ def do_tests(test_group):
 		if ret == 0:
 			print_msg(test_group, test_file_name, n, 'OK')
 			print('\n    ' + msg)
+			print_trace('', stderr)
 			passed += 1
 		else:
 			print_ko(test_group, test_file_name, n, msg)
